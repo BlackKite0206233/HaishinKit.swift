@@ -277,6 +277,10 @@ open class RTMPConnection: EventDispatcher {
         guard let uri = URL(string: command), let scheme: String = uri.scheme, !connected && RTMPConnection.supportedProtocols.contains(scheme) else {
             return
         }
+        print("command: " + command)
+        print("uri path: " + uri.path)
+        print("uri scheme: " + uri.scheme!)
+        // print("uri host: " + uri.host!)
         self.uri = uri
         self.arguments = arguments
         timer = Timer(timeInterval: 1.0, target: self, selector: #selector(on(timer:)), userInfo: nil, repeats: true)
