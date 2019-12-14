@@ -22,7 +22,7 @@ void Calibrator::startCapturing() {
     imagePoints.clear();
 }
 
-int Calibrator::processFrame(BGRAVideoFrame frame) {
+cv::Mat Calibrator::processFrame(BGRAVideoFrame frame) {
     cv::Mat tmp(frame.height, frame.width, CV_8UC4, frame.data, frame.stride);
     cv::Mat view(720, 480, CV_8UC4);
     cv::resize(tmp, view, cv::Size(720, 480));
@@ -51,8 +51,6 @@ int Calibrator::processFrame(BGRAVideoFrame frame) {
         case ASYMMETRIC_CIRCLES_GRID:
             found = findCirclesGrid( viewGray, boardSize, pointbuf, CALIB_CB_ASYMMETRIC_GRID );
             break;
-        default:
-            return static_cast<void>(fprintf( stderr, "Unknown pattern type\n" )), -1;
     }
     
     // improve the found corners' coordinate accuracy
@@ -73,11 +71,10 @@ int Calibrator::processFrame(BGRAVideoFrame frame) {
         printf("not found\n");
     }
     
-    string msg = mode == CAPTURING ? "100/100" :
-    mode == CALIBRATED ? "Calibrated" : "Press 'g' to start";
+    string msg = mode == CAPTURING ? "100/100" : mode == CALIBRATED ? "Calibrated" : "Press 'g' to start";
     int baseLine = 0;
     cv::Size textSize = getTextSize(msg, 1, 1, 1, &baseLine);
-    cv::Point textOrigin(view.cols - 2*textSize.width - 10, view.rows - 2*baseLine - 10);
+    cv::Point textOrigin(view.cols - 2*textSize.width - 10, view.rows - 2*textSize.height - 10);
     
     if( mode == CAPTURING )
     {
@@ -87,8 +84,7 @@ int Calibrator::processFrame(BGRAVideoFrame frame) {
             msg = format( "%d/%d", (int)imagePoints.size(), nframes );
     }
     
-    putText( view, msg, textOrigin, 1, 1,
-            mode != CALIBRATED ? Scalar(0,0,255) : Scalar(0,255,0));
+    putText( view, msg, textOrigin, 1, 1, mode != CALIBRATED ? Scalar(0,0,255) : Scalar(0,255,0));
     
     if( mode == CALIBRATED && undistortImage )
     {
@@ -114,7 +110,7 @@ int Calibrator::processFrame(BGRAVideoFrame frame) {
             mode = DETECTION;
         }
     }
-    return 0;
+    return view;
 }
 
 static double computeReprojectionErrors(

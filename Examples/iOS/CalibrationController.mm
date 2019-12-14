@@ -52,9 +52,9 @@
     });
     
     // And perform processing in current thread
-    self.calibrator->processFrame(frame);
-    UIImage* originalImage = [self UIImageByFrame:frame];
-    UIImage* image = [CalibrationController resizedImage:originalImage width:320 height:180];
+    cv::Mat m = self.calibrator->processFrame(frame);
+    UIImage* image = [self UIImageFromCVMat:m];
+    image = [CalibrationController resizedImage:image width:480 height:240];
     
     // When it's done we query rendering from main thread
     dispatch_async( dispatch_get_main_queue(), ^{
@@ -100,5 +100,48 @@
 
     return ret;
 }
+
+-(UIImage *)UIImageFromCVMat:(cv::Mat) cvMat {
+    NSData *data = [NSData dataWithBytes:cvMat.data length: cvMat.step.p[0]* cvMat.rows];
+
+    CGColorSpaceRef colorSpace;
+    CGBitmapInfo bitmapInfo;
+
+    if (cvMat.elemSize() == 1) {
+        colorSpace = CGColorSpaceCreateDeviceGray();
+        bitmapInfo = kCGImageAlphaNone | kCGBitmapByteOrderDefault;
+    } else {
+        colorSpace = CGColorSpaceCreateDeviceRGB();
+        bitmapInfo = kCGBitmapByteOrder32Little | (
+            cvMat.elemSize() == 3? kCGImageAlphaNone : kCGImageAlphaNoneSkipFirst
+        );
+    }
+
+    CGDataProviderRef provider = CGDataProviderCreateWithCFData((__bridge CFDataRef)data);
+
+    // Creating CGImage from cv::Mat
+    CGImageRef imageRef = CGImageCreate(
+        cvMat.cols,                 //width
+        cvMat.rows,                 //height
+        8,                          //bits per component
+        8 * cvMat.elemSize(),       //bits per pixel
+        cvMat.step[0],              //bytesPerRow
+        colorSpace,                 //colorspace
+        bitmapInfo,                 // bitmap info
+        provider,                   //CGDataProviderRef
+        NULL,                       //decode
+        false,                      //should interpolate
+        kCGRenderingIntentDefault   //intent
+    );
+
+    // Getting UIImage from CGImage
+    UIImage *finalImage = [UIImage imageWithCGImage:imageRef];
+    CGImageRelease(imageRef);
+    CGDataProviderRelease(provider);
+    CGColorSpaceRelease(colorSpace);
+
+    return finalImage;
+}
+
 
 @end

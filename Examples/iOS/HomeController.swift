@@ -21,6 +21,7 @@ final class HomeController: UIViewController {
         super.viewDidLoad()
         projectNameField?.layer.borderWidth = 1
         projectNameField?.layer.borderColor = UIColor.black.cgColor
+        projectNameField?.keyboardType = UIKeyboardType.URL
         let tap: UITapGestureRecognizer = UITapGestureRecognizer(target: self, action: #selector(UIInputViewController.dismissKeyboard))
         view.addGestureRecognizer(tap)
     }
@@ -47,20 +48,24 @@ final class HomeController: UIViewController {
                 return
             }
             
-            request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
-            
-            body.append(Data("--\(boundary)\r\n".utf8))
-            body.append(Data("Content-Disposition: form-data; name=\"name\"\r\n\r\n".utf8))
-            body.append(Data("\(projectNameField?.text)\r\n".utf8))
+            if let text = projectNameField?.text {
+                request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+                
+                body.append(Data("--\(boundary)\r\n".utf8))
+                body.append(Data("Content-Disposition: form-data; name=\"name\"\r\n\r\n".utf8))
+                body.append(Data("\(text)\r\n".utf8))
 
-            body.append(Data("--\(boundary)\r\n".utf8))
-            body.append(Data("Content-Disposition: form-data; name=\"calibration\"; filename=\"\(arc4random())\"\r\n".utf8))
-            body.append(Data("Content-Type: text/yaml\r\n\r\n".utf8))
-            body.append(Data(file.utf8))
-            body.append(Data("\r\n".utf8))
-            body.append(Data("--\(boundary)--\r\n".utf8))
-            
-            request.httpBody = body
+                body.append(Data("--\(boundary)\r\n".utf8))
+                body.append(Data("Content-Disposition: form-data; name=\"calibration\"; filename=\"\(arc4random())\"\r\n".utf8))
+                body.append(Data("Content-Type: text/yaml\r\n\r\n".utf8))
+                body.append(Data(file.utf8))
+                body.append(Data("\r\n".utf8))
+                body.append(Data("--\(boundary)--\r\n".utf8))
+                
+                request.httpBody = body
+            } else {
+                return
+            }
         }
         
         let task = session.dataTask(with: request as URLRequest, completionHandler: { data, response, error in

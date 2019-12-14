@@ -16,7 +16,7 @@ class Calibrator
 {
 public:
     Calibrator(std::string outputPath);
-    int processFrame(BGRAVideoFrame frame);
+    cv::Mat processFrame(BGRAVideoFrame frame);
     void startCapturing();
 private:
     enum { DETECTION = 0, CAPTURING = 1, CALIBRATED = 2 };
